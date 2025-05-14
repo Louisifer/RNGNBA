@@ -32,10 +32,10 @@ conn.close()
 
 # Print the result
 if not df.empty:
-    print(f"Game {game_num} details for LeBron James:")
+    print(f"Game {game_num} details for the 2017 Cavaliers:")
     print(df)
 else:
-    print(f"No game found for LeBron James with gameNum {game_num}.")
+    print(f"No game found for Cavaliers with gameNum {game_num}.")
 
 # Close the connection
 conn.close()
