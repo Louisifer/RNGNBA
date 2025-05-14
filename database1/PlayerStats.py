@@ -21,7 +21,7 @@ game_num = random.randint(1, 82)
 # Query to fetch the game details for LeBron James with the selected game number
 query = f"""
 SELECT * FROM RNG_table
-WHERE firstName = 'LeBron' AND lastName = 'James' AND year = '2017' AND gameNum = {game_num}
+WHERE playerteamName = 'Cavaliers' AND year = '2017' AND gameNum = {game_num}
 """
 
 # Execute the query and load results into a DataFrame
@@ -40,5 +40,25 @@ else:
 # Close the connection
 conn.close()
 
+from flask import Flask, request, jsonify
+import sqlite3
+import random
+
+app = Flask(__name__)
+
+@app.route('/get_game', methods=['GET'])
+def get_game():
+    game_num = random.randint(1, 82)
+    conn = sqlite3.connect('RNG_database.db')
+    query = f"""
+    SELECT * FROM RNG_table
+    WHERE playerteamName = 'Cavaliers' AND year = '2017' AND gameNum = {game_num}
+    """
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+    return jsonify(df.to_dict(orient='records'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
 
 
