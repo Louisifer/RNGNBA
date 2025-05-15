@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBA Player Search</title>
+    <script>
+        // Hardcoded team-to-year mappings
+        const teamYears = {
+            "Lakers": [1976, 1977, 1978, 1979, 1980, 2024],
+            "Cavaliers": [1976, 1977, 1978, 2024],
+            "Bulls": [1976, 1977, 1978, 2024]
+            // Add all teams and their valid years
+        };
+
+        function updateYears() {
+            let team = document.getElementById("team").value;
+            let yearSelect = document.getElementById("year");
+            
+            // Clear previous options
+            yearSelect.innerHTML = '<option value="">--Choose Year--</option>';
+
+            if (teamYears[team]) {
+                teamYears[team].forEach(year => {
+                    let option = document.createElement("option");
+                    option.value = year;
+                    option.textContent = year;
+                    yearSelect.appendChild(option);
+                });
+            }
+        }
+
+        function fetchPlayers(event) {
+            event.preventDefault();
+
+            let team = document.getElementById("team").value;
+            let year = document.getElementById("year").value;
+
+            fetch(`/get_players?team=${team}&year=${year}`)
+                .then(response => response.json())
+                .then(data => {
+                    let results = document.getElementById("playerResults");
+                    results.innerHTML = ""; // Clear old results
+
+                    data.forEach(player => {
+                        let row = `<tr>
+                            <td>${player.firstName}</td>
+                            <td>${player.lastName}</td>
+                            <td>${player.position}</td>
+                            <td>${player.points}</td>
+                        </tr>`;
+                        results.innerHTML += row;
+                    });
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        }
+    </script>
+</head>
+<body>
+    <h1>NBA Player Search</h1>
+    <form onsubmit="fetchPlayers(event)">
+        <label for="team">Select Team:</label>
+        <select id="team" name="team" onchange="updateYears()">
+            <option value="">--Choose Team--</option>
+            <option value="Lakers">Lakers</option>
+            <option value="Cavaliers">Cavaliers</option>
+            <option value="Bulls">Bulls</option>
+            <!-- Add all teams here -->
+        </select>
+
+        <label for="year">Select Year:</label>
+        <select id="year" name="year">
+            <option value="">--Choose Year--</option>
+        </select>
+
+        <button type="submit">Search</button>
+    </form>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Player Name</th>
+                <th>Position</th>
+                <th>Points</th>
+                <!-- Add more columns as needed -->
+            </tr>
+        </thead>
+        <tbody id="playerResults"></tbody>
+    </table>
+</body>
+</html>
