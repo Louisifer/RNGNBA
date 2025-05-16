@@ -8,7 +8,7 @@ CORS(app)  # Allow frontend requests if running on different domains
 
 @app.route("/")
 def home():
-    return render_template("index.html")  # Make sure index.html is in the "templates" folder
+    return render_template("index.html")  # Ensure index.html is in the "templates" folder
 
 @app.route("/get_players", methods=["GET"])
 def get_players():
@@ -25,7 +25,6 @@ def get_players():
     WHERE playerteamName = ? AND year = ?
     GROUP BY firstName, lastName
     """
-    # Use a context manager to ensure safe DB operations
     with sqlite3.connect('RNG_database.db') as conn:
         df = pd.read_sql_query(query, conn, params=(team, year))
     
@@ -37,4 +36,6 @@ def get_players():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+
 
