@@ -1,245 +1,302 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RNGNBA</title>
-    <style>
-        /* General Styling */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-
-        /* Apply rounded edges to select dropdowns and buttons */
-        select, button {
-            border-radius: 10px; /* Rounded edges */
-            padding: 10px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-            margin: 5px;
-        }
-
-        /* Blue Search Button */
-        button[type="submit"] {
-            background-color: #007bff; /* Blue color */
-            color: white;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        button[type="submit"]:hover {
-            background-color: #0056b3;
-        }
-
-        /* General Button Styling */
-        button {
-            background-color: #f4f4f4; /* Light grey */
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        button:hover {
-            background-color: #ddd;
-        }
-
-        /* Table Styling */
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-top: 20px;
-            border: 1px solid #ccc; /* Grey border */
-        }
-
-        th, td {
-            padding: 10px;
-            border: 1px solid #ccc; /* Grey border */
-            text-align: center;
-        }
-
-        th {
-            background-color: #f4f4f4;
-        }
-
-        /* Layout for Player Search and My Team */
-        .container {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-
-        .box {
-            width: 48%;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RNGNBA</title>
+  <style>
+    /* General Styling */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    
+    /* Styling for select dropdowns and buttons */
+    select, button {
+      border-radius: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      margin: 5px;
+    }
+    
+    button[type="submit"] {
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button[type="submit"]:hover {
+      background-color: #0056b3;
+    }
+    
+    /* Small buttons for Select/Remove */
+    .small-btn {
+      padding: 5px 8px;
+      font-size: 14px;
+      border-radius: 8px;
+      margin-left: 5px;
+    }
+    
+    /* Table Styling */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+      border: 1px solid #ccc;
+    }
+    th, td {
+      padding: 6px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    
+    /* Layout */
+    .container {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+    .box {
+      width: 48%;
+    }
+  </style>
 </head>
 <body>
-    <h1>Player Selection</h1>
-
-    <script>
-        // Dynamic team-to-year mappings
-        const teams = [
-            "76ers", "Bucks", "Bulls", "Cavaliers", "Celtics", "Clippers", "Grizzlies", "Hawks",
-            "Heat", "Hornets", "Jazz", "Kings", "Knicks", "Lakers", "Magic", "Mavericks", "Nets",
-            "Nuggets", "Pacers", "Pelicans", "Pistons", "Raptors", "Rockets", "Spurs", "Suns",
-            "Thunder", "Timberwolves", "Trail Blazers", "Warriors", "Wizards"
-        ];
-
-        const startYear = 1976;
-        const endYear = 2024;
-
-        const teamYears = Object.fromEntries(
-            teams.map(team => [team, Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i)])
-        );
-
-        function updateYears() {
-            let team = document.getElementById("team").value;
-            let yearSelect = document.getElementById("year");
-
-            // Clear previous options
-            yearSelect.innerHTML = '<option value="">--Choose Year--</option>';
-
-            if (teamYears[team]) {
-                teamYears[team].forEach(year => {
-                    let option = document.createElement("option");
-                    option.value = year;
-                    option.textContent = year;
-                    yearSelect.appendChild(option);
-                });
-            }
-        }
-
-        function fetchPlayers(event) {
-            event.preventDefault(); // Prevent form reset
-
-            let team = document.getElementById("team").value;
-            let year = document.getElementById("year").value;
-
-            fetch(`http://127.0.0.1:5000/get_players?team=${team}&year=${year}`)
-                .then(response => response.json())
-                .then(data => {
-                    let results = document.getElementById("playerResults");
-                    results.innerHTML = ""; // Clear previous results
-
-                    if (data.length === 0) {
-                        results.innerHTML = "<tr><td colspan='3'>No players found for the selected team and year.</td></tr>";
-                        return;
-                    }
-
-                    data.forEach(player => {
-                        let row = document.createElement("tr");
-                        row.innerHTML = `
-                            <td>${player.firstName}</td>
-                            <td>${player.lastName}</td>
-                            <td><button onclick="selectPlayer('${player.firstName}', '${player.lastName}')">Select</button></td>
-                        `;
-                        results.appendChild(row);
-                    });
-                })
-                .catch(error => console.error("Error fetching data:", error));
-        }
-
-        function selectPlayer(firstName, lastName) {
-            let myTeam = document.getElementById("myTeam");
-
-            // Avoid duplicate entries
-            if (document.getElementById(`team-${firstName}-${lastName}`)) {
-                return; // Player is already added
-            }
-
+  <h1>Player Selection</h1>
+  
+  <script>
+    // Global object to store each player's original index in the search results.
+    const originalPlayerIndices = {};
+    
+    // Dynamic team-to-year mappings
+    const teams = [
+      "76ers", "Bucks", "Bulls", "Cavaliers", "Celtics", "Clippers", "Grizzlies",
+      "Hawks", "Heat", "Hornets", "Jazz", "Kings", "Knicks", "Lakers", "Magic",
+      "Mavericks", "Nets", "Nuggets", "Pacers", "Pelicans", "Pistons", "Raptors",
+      "Rockets", "Spurs", "Suns", "Thunder", "Timberwolves", "Trail Blazers",
+      "Warriors", "Wizards"
+    ];
+    
+    const startYear = 1976;
+    const endYear = 2024;
+    
+    const teamYears = Object.fromEntries(
+      teams.map(team => [team, Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i)])
+    );
+    
+    function updateYears() {
+      const team = document.getElementById("team").value;
+      const yearSelect = document.getElementById("year");
+      
+      // Clear previous options  
+      yearSelect.innerHTML = '<option value="">--Choose Year--</option>';
+      
+      if (teamYears[team]) {
+        teamYears[team].forEach(year => {
+          const option = document.createElement("option");
+          option.value = year;
+          option.textContent = year;
+          yearSelect.appendChild(option);
+        });
+      }
+    }
+    
+    function fetchPlayers(event) {
+      event.preventDefault(); // Prevent form submission from reloading the page
+      
+      const team = document.getElementById("team").value;
+      const year = document.getElementById("year").value;
+      
+      fetch(`http://127.0.0.1:5000/get_players?team=${team}&year=${year}`)
+        .then(response => response.json())
+        .then(data => {
+          const results = document.getElementById("playerResults");
+          results.innerHTML = ""; // Clear previous results
+          
+          // Reset the global original indices object
+          for (const key in originalPlayerIndices) {
+            delete originalPlayerIndices[key];
+          }
+          
+          if (data.length === 0) {
+            results.innerHTML = `<tr><td colspan="2">No players found for the selected team and year.</td></tr>`;
+            return;
+          }
+          
+          // Create rows for each player. Save each player's original index.
+          data.forEach((player, index) => {
+            const fullName = `${player.firstName} ${player.lastName}`;
+            originalPlayerIndices[`${player.firstName}-${player.lastName}`] = index;
+            
             let row = document.createElement("tr");
-            row.id = `team-${firstName}-${lastName}`;
-
+            row.setAttribute("data-index", index);
             row.innerHTML = `
-                <td>${firstName}</td>
-                <td>${lastName}</td>
-                <td><button onclick="removePlayer('${firstName}', '${lastName}')">Remove</button></td>
+              <td>
+                ${fullName}
+                <button class="small-btn" onclick="selectPlayer(this, '${player.firstName}', '${player.lastName}', '${player.avgRNGscore}')">
+                  Select
+                </button>
+              </td>
             `;
-
-            myTeam.appendChild(row);
+            results.appendChild(row);
+          });
+        })
+        .catch(error => console.error("Error fetching data:", error));
+    }
+    
+    function selectPlayer(button, firstName, lastName, avgRNGscore) {
+      const myTeam = document.getElementById("myTeam");
+      
+      // Prevent duplicate selections
+      if (document.getElementById(`team-${firstName}-${lastName}`)) {
+        button.closest("tr").remove();
+        return;
+      }
+      
+      const fullName = `${firstName} ${lastName}`;
+      let row = document.createElement("tr");
+      row.id = `team-${firstName}-${lastName}`;
+      row.innerHTML = `
+        <td>${fullName}</td>
+        <td>${parseFloat(avgRNGscore).toFixed(2)}</td>
+        <td>
+          <button class="small-btn" onclick="removePlayer('${firstName}', '${lastName}', '${avgRNGscore}')">
+            Remove
+          </button>
+        </td>
+      `;
+      myTeam.appendChild(row);
+      
+      // Remove the player from the search results list.
+      button.closest("tr").remove();
+    }
+    
+    function removePlayer(firstName, lastName, avgRNGscore) {
+      // Remove the player from "My Team"
+      const teamRow = document.getElementById(`team-${firstName}-${lastName}`);
+      if (teamRow) {
+        teamRow.remove();
+      }
+      
+      const fullName = `${firstName} ${lastName}`;
+      let newRow = document.createElement("tr");
+      
+      // Retrieve the original index for proper reinsertion.
+      const index = originalPlayerIndices[`${firstName}-${lastName}`];
+      newRow.setAttribute("data-index", index);
+      newRow.innerHTML = `
+        <td>
+          ${fullName}
+          <button class="small-btn" onclick="selectPlayer(this, '${firstName}', '${lastName}', '${avgRNGscore}')">
+            Select
+          </button>
+        </td>
+      `;
+      insertRowInOrder(newRow, index);
+    }
+    
+    // Insert the new row into the search results in its proper original order.
+    function insertRowInOrder(row, playerIndex) {
+      const results = document.getElementById("playerResults");
+      const existingRows = results.getElementsByTagName("tr");
+      let inserted = false;
+      
+      for (let i = 0; i < existingRows.length; i++) {
+        const currentIndex = parseInt(existingRows[i].getAttribute("data-index"), 10);
+        if (currentIndex > playerIndex) {
+          results.insertBefore(row, existingRows[i]);
+          inserted = true;
+          break;
         }
-
-        function removePlayer(firstName, lastName) {
-            let row = document.getElementById(`team-${firstName}-${lastName}`);
-            if (row) {
-                row.remove();
-            }
-        }
-    </script>
-
-    <form onsubmit="fetchPlayers(event)">
-        <label for="team">Select Team:</label>
-        <select id="team" name="team" onchange="updateYears()">
-            <option value="">--Choose Team--</option>
-            <option value="76ers">76ers</option>
-            <option value="Bucks">Bucks</option>
-            <option value="Bulls">Bulls</option>
-            <option value="Cavaliers">Cavaliers</option>
-            <option value="Celtics">Celtics</option>
-            <option value="Clippers">Clippers</option>
-            <option value="Grizzlies">Grizzlies</option>
-            <option value="Hawks">Hawks</option>
-            <option value="Heat">Heat</option>
-            <option value="Hornets">Hornets</option>
-            <option value="Jazz">Jazz</option>
-            <option value="Kings">Kings</option>
-            <option value="Knicks">Knicks</option>
-            <option value="Lakers">Lakers</option>
-            <option value="Magic">Magic</option>
-            <option value="Mavericks">Mavericks</option>
-            <option value="Nets">Nets</option>
-            <option value="Nuggets">Nuggets</option>
-            <option value="Pacers">Pacers</option>
-            <option value="Pelicans">Pelicans</option>
-            <option value="Pistons">Pistons</option>
-            <option value="Raptors">Raptors</option>
-            <option value="Rockets">Rockets</option>
-            <option value="Spurs">Spurs</option>
-            <option value="Suns">Suns</option>
-            <option value="Thunder">Thunder</option>
-            <option value="Timberwolves">Timberwolves</option>
-            <option value="Trail Blazers">Trail Blazers</option>
-            <option value="Warriors">Warriors</option>
-            <option value="Wizards">Wizards</option>
-        </select>
-
-        <label for="year">Select Year:</label>
-        <select id="year" name="year">
-            <option value="">--Choose Year--</option>
-        </select>
-
-        <button type="submit">Search</button>
-    </form>
-
-    <div class="container">
-        <div class="box">
-            <h2>NBA Player Search Results</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>First Name</th>
-                        <th>Last Name</th>
-                        <th>Select</th>
-                    </tr>
-                </thead>
-                <tbody id="playerResults"></tbody>
-            </table>
-        </div>
-
-        <div class="box">
-            <h2>My Team</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>First Name</th>
-                        <th>Last Name</th>
-                        <th>Remove</th>
-                    </tr>
-                </thead>
-                <tbody id="myTeam"></tbody>
-            </table>
-        </div>
+      }
+      if (!inserted) {
+        results.appendChild(row);
+      }
+    }
+  </script>
+  
+  <form onsubmit="fetchPlayers(event)">
+    <label for="team">Select Team:</label>
+    <select id="team" name="team" onchange="updateYears()">
+      <option value="">--Choose Team--</option>
+      <option value="76ers">76ers</option>
+      <option value="Bucks">Bucks</option>
+      <option value="Bulls">Bulls</option>
+      <option value="Cavaliers">Cavaliers</option>
+      <option value="Celtics">Celtics</option>
+      <option value="Clippers">Clippers</option>
+      <option value="Grizzlies">Grizzlies</option>
+      <option value="Hawks">Hawks</option>
+      <option value="Heat">Heat</option>
+      <option value="Hornets">Hornets</option>
+      <option value="Jazz">Jazz</option>
+      <option value="Kings">Kings</option>
+      <option value="Knicks">Knicks</option>
+      <option value="Lakers">Lakers</option>
+      <option value="Magic">Magic</option>
+      <option value="Mavericks">Mavericks</option>
+      <option value="Nets">Nets</option>
+      <option value="Nuggets">Nuggets</option>
+      <option value="Pacers">Pacers</option>
+      <option value="Pelicans">Pelicans</option>
+      <option value="Pistons">Pistons</option>
+      <option value="Raptors">Raptors</option>
+      <option value="Rockets">Rockets</option>
+      <option value="Spurs">Spurs</option>
+      <option value="Suns">Suns</option>
+      <option value="Thunder">Thunder</option>
+      <option value="Timberwolves">Timberwolves</option>
+      <option value="Trail Blazers">Trail Blazers</option>
+      <option value="Warriors">Warriors</option>
+      <option value="Wizards">Wizards</option>
+    </select>
+    
+    <label for="year">Select Year:</label>
+    <select id="year" name="year">
+      <option value="">--Choose Year--</option>
+    </select>
+    
+    <button type="submit">Search</button>
+  </form>
+  
+  <div class="container">
+    <div class="box">
+      <h2>NBA Player Search Results</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+          </tr>
+        </thead>
+        <tbody id="playerResults"></tbody>
+      </table>
     </div>
+    
+    <div class="box">
+      <h2>My Team</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>RNG Score</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="myTeam"></tbody>
+      </table>
+    </div>
+  </div>
 </body>
 </html>
+
+
+
+
+
+
+
 
