@@ -4,42 +4,93 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RNGNBA</title>
+    <style>
+        /* General Styling */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        /* Apply rounded edges to select dropdowns and buttons */
+        select, button {
+            border-radius: 10px; /* Rounded edges */
+            padding: 10px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            margin: 5px;
+        }
+
+        /* Blue Search Button */
+        button[type="submit"] {
+            background-color: #007bff; /* Blue color */
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        /* General Button Styling */
+        button {
+            background-color: #f4f4f4; /* Light grey */
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background-color: #ddd;
+        }
+
+        /* Table Styling */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+            border: 1px solid #ccc; /* Grey border */
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc; /* Grey border */
+            text-align: center;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        /* Layout for Player Search and My Team */
+        .container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .box {
+            width: 48%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Player Selection</h1>
+
     <script>
-        // Hardcoded team-to-year mappings
-const teamYears = {
-    "76ers": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Bucks": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Bulls": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Cavaliers": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Celtics": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Clippers": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Grizzlies": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Hawks": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Heat": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Hornets": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Jazz": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Kings": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Knicks": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Lakers": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Magic": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Mavericks": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Nets": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Nuggets": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Pacers": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Pelicans": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Pistons": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Raptors": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Rockets": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Spurs": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Suns": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Thunder": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Timberwolves": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Trail Blazers": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Warriors": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
-    "Wizards": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i)
-};
+        // Dynamic team-to-year mappings
+        const teams = [
+            "76ers", "Bucks", "Bulls", "Cavaliers", "Celtics", "Clippers", "Grizzlies", "Hawks",
+            "Heat", "Hornets", "Jazz", "Kings", "Knicks", "Lakers", "Magic", "Mavericks", "Nets",
+            "Nuggets", "Pacers", "Pelicans", "Pistons", "Raptors", "Rockets", "Spurs", "Suns",
+            "Thunder", "Timberwolves", "Trail Blazers", "Warriors", "Wizards"
+        ];
 
+        const startYear = 1976;
+        const endYear = 2024;
 
+        const teamYears = Object.fromEntries(
+            teams.map(team => [team, Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i)])
+        );
 
         function updateYears() {
             let team = document.getElementById("team").value;
@@ -59,7 +110,7 @@ const teamYears = {
         }
 
         function fetchPlayers(event) {
-            event.preventDefault();
+            event.preventDefault(); // Prevent form reset
 
             let team = document.getElementById("team").value;
             let year = document.getElementById("year").value;
@@ -70,23 +121,19 @@ const teamYears = {
                     let results = document.getElementById("playerResults");
                     results.innerHTML = ""; // Clear previous results
 
-                    let uniquePlayers = new Set();
+                    if (data.length === 0) {
+                        results.innerHTML = "<tr><td colspan='3'>No players found for the selected team and year.</td></tr>";
+                        return;
+                    }
 
                     data.forEach(player => {
-                        let playerKey = `${player.firstName} ${player.lastName}`;
-
-                        if (!uniquePlayers.has(playerKey)) {
-                            uniquePlayers.add(playerKey);
-
-                            let row = document.createElement("tr");
-                            row.innerHTML = `
-                                <td>${player.firstName}</td>
-                                <td>${player.lastName}</td>
-                                <td><button onclick="selectPlayer('${player.firstName}', '${player.lastName}')">Select</button></td>
-                            `;
-
-                            results.appendChild(row);
-                        }
+                        let row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${player.firstName}</td>
+                            <td>${player.lastName}</td>
+                            <td><button onclick="selectPlayer('${player.firstName}', '${player.lastName}')">Select</button></td>
+                        `;
+                        results.appendChild(row);
                     });
                 })
                 .catch(error => console.error("Error fetching data:", error));
@@ -119,60 +166,55 @@ const teamYears = {
             }
         }
     </script>
-</head>
-<body>
-    <h1>Player Selection</h1>
-    
-<form onsubmit="fetchPlayers(event)">
-    <label for="team">Select Team:</label>
-    <select id="team" name="team" onchange="updateYears()">
-        <option value="">--Choose Team--</option>
-        <option value="76ers">76ers</option>
-        <option value="Bucks">Bucks</option>
-        <option value="Bulls">Bulls</option>
-        <option value="Cavaliers">Cavaliers</option>
-        <option value="Celtics">Celtics</option>
-        <option value="Clippers">Clippers</option>
-        <option value="Grizzlies">Grizzlies</option>
-        <option value="Hawks">Hawks</option>
-        <option value="Heat">Heat</option>
-        <option value="Hornets">Hornets</option>
-        <option value="Jazz">Jazz</option>
-        <option value="Kings">Kings</option>
-        <option value="Knicks">Knicks</option>
-        <option value="Lakers">Lakers</option>
-        <option value="Magic">Magic</option>
-        <option value="Mavericks">Mavericks</option>
-        <option value="Nets">Nets</option>
-        <option value="Nuggets">Nuggets</option>
-        <option value="Pacers">Pacers</option>
-        <option value="Pelicans">Pelicans</option>
-        <option value="Pistons">Pistons</option>
-        <option value="Raptors">Raptors</option>
-        <option value="Rockets">Rockets</option>
-        <option value="Spurs">Spurs</option>
-        <option value="Suns">Suns</option>
-        <option value="Thunder">Thunder</option>
-        <option value="Timberwolves">Timberwolves</option>
-        <option value="Trail Blazers">Trail Blazers</option>
-        <option value="Warriors">Warriors</option>
-        <option value="Wizards">Wizards</option>
-    </select>
 
-    <label for="year">Select Year:</label>
-    <select id="year" name="year">
-        <option value="">--Choose Year--</option>
-    </select>
+    <form onsubmit="fetchPlayers(event)">
+        <label for="team">Select Team:</label>
+        <select id="team" name="team" onchange="updateYears()">
+            <option value="">--Choose Team--</option>
+            <option value="76ers">76ers</option>
+            <option value="Bucks">Bucks</option>
+            <option value="Bulls">Bulls</option>
+            <option value="Cavaliers">Cavaliers</option>
+            <option value="Celtics">Celtics</option>
+            <option value="Clippers">Clippers</option>
+            <option value="Grizzlies">Grizzlies</option>
+            <option value="Hawks">Hawks</option>
+            <option value="Heat">Heat</option>
+            <option value="Hornets">Hornets</option>
+            <option value="Jazz">Jazz</option>
+            <option value="Kings">Kings</option>
+            <option value="Knicks">Knicks</option>
+            <option value="Lakers">Lakers</option>
+            <option value="Magic">Magic</option>
+            <option value="Mavericks">Mavericks</option>
+            <option value="Nets">Nets</option>
+            <option value="Nuggets">Nuggets</option>
+            <option value="Pacers">Pacers</option>
+            <option value="Pelicans">Pelicans</option>
+            <option value="Pistons">Pistons</option>
+            <option value="Raptors">Raptors</option>
+            <option value="Rockets">Rockets</option>
+            <option value="Spurs">Spurs</option>
+            <option value="Suns">Suns</option>
+            <option value="Thunder">Thunder</option>
+            <option value="Timberwolves">Timberwolves</option>
+            <option value="Trail Blazers">Trail Blazers</option>
+            <option value="Warriors">Warriors</option>
+            <option value="Wizards">Wizards</option>
+        </select>
 
-    <button type="submit">Search</button>
-</form>
+        <label for="year">Select Year:</label>
+        <select id="year" name="year">
+            <option value="">--Choose Year--</option>
+        </select>
 
+        <button type="submit">Search</button>
+    </form>
 
-    <div style="display: flex;">
-        <!-- Player Results Table -->
-        <div>
+    <div class="container">
+        <div class="box">
             <h2>NBA Player Search Results</h2>
-            <table border="1">
+            <table>
                 <thead>
                     <tr>
                         <th>First Name</th>
@@ -184,10 +226,9 @@ const teamYears = {
             </table>
         </div>
 
-        <!-- My Team Section -->
-        <div style="margin-left: 50px;">
+        <div class="box">
             <h2>My Team</h2>
-            <table border="1">
+            <table>
                 <thead>
                     <tr>
                         <th>First Name</th>
@@ -201,3 +242,4 @@ const teamYears = {
     </div>
 </body>
 </html>
+
