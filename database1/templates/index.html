@@ -3,20 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NBA Player Search</title>
+    <title>RNGNBA</title>
     <script>
         // Hardcoded team-to-year mappings
-        const teamYears = {
-            "Lakers": [1976, 1977, 1978, 1979, 1980, 2024],
-            "Cavaliers": [1976, 1977, 1978, 2024],
-            "Bulls": [1976, 1977, 1978, 2024]
-            // Add all teams and their valid years
-        };
+const teamYears = {
+    "76ers": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Bucks": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Bulls": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Cavaliers": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Celtics": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Clippers": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Grizzlies": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Hawks": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Heat": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Hornets": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Jazz": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Kings": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Knicks": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Lakers": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Magic": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Mavericks": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Nets": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Nuggets": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Pacers": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Pelicans": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Pistons": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Raptors": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Rockets": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Spurs": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Suns": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Thunder": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Timberwolves": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Trail Blazers": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Warriors": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i),
+    "Wizards": Array.from({ length: 2024 - 1976 + 1 }, (_, i) => 1976 + i)
+};
+
+
 
         function updateYears() {
             let team = document.getElementById("team").value;
             let yearSelect = document.getElementById("year");
-            
+
             // Clear previous options
             yearSelect.innerHTML = '<option value="">--Choose Year--</option>';
 
@@ -36,56 +64,140 @@
             let team = document.getElementById("team").value;
             let year = document.getElementById("year").value;
 
-            fetch(`/get_players?team=${team}&year=${year}`)
+            fetch(`http://127.0.0.1:5000/get_players?team=${team}&year=${year}`)
                 .then(response => response.json())
                 .then(data => {
                     let results = document.getElementById("playerResults");
-                    results.innerHTML = ""; // Clear old results
+                    results.innerHTML = ""; // Clear previous results
+
+                    let uniquePlayers = new Set();
 
                     data.forEach(player => {
-                        let row = `<tr>
-                            <td>${player.firstName}</td>
-                            <td>${player.lastName}</td>
-                            <td>${player.position}</td>
-                            <td>${player.points}</td>
-                        </tr>`;
-                        results.innerHTML += row;
+                        let playerKey = `${player.firstName} ${player.lastName}`;
+
+                        if (!uniquePlayers.has(playerKey)) {
+                            uniquePlayers.add(playerKey);
+
+                            let row = document.createElement("tr");
+                            row.innerHTML = `
+                                <td>${player.firstName}</td>
+                                <td>${player.lastName}</td>
+                                <td><button onclick="selectPlayer('${player.firstName}', '${player.lastName}')">Select</button></td>
+                            `;
+
+                            results.appendChild(row);
+                        }
                     });
                 })
                 .catch(error => console.error("Error fetching data:", error));
         }
+
+        function selectPlayer(firstName, lastName) {
+            let myTeam = document.getElementById("myTeam");
+
+            // Avoid duplicate entries
+            if (document.getElementById(`team-${firstName}-${lastName}`)) {
+                return; // Player is already added
+            }
+
+            let row = document.createElement("tr");
+            row.id = `team-${firstName}-${lastName}`;
+
+            row.innerHTML = `
+                <td>${firstName}</td>
+                <td>${lastName}</td>
+                <td><button onclick="removePlayer('${firstName}', '${lastName}')">Remove</button></td>
+            `;
+
+            myTeam.appendChild(row);
+        }
+
+        function removePlayer(firstName, lastName) {
+            let row = document.getElementById(`team-${firstName}-${lastName}`);
+            if (row) {
+                row.remove();
+            }
+        }
     </script>
 </head>
 <body>
-    <h1>NBA Player Search</h1>
-    <form onsubmit="fetchPlayers(event)">
-        <label for="team">Select Team:</label>
-        <select id="team" name="team" onchange="updateYears()">
-            <option value="">--Choose Team--</option>
-            <option value="Lakers">Lakers</option>
-            <option value="Cavaliers">Cavaliers</option>
-            <option value="Bulls">Bulls</option>
-            <!-- Add all teams here -->
-        </select>
+    <h1>Player Selection</h1>
+    
+<form onsubmit="fetchPlayers(event)">
+    <label for="team">Select Team:</label>
+    <select id="team" name="team" onchange="updateYears()">
+        <option value="">--Choose Team--</option>
+        <option value="76ers">76ers</option>
+        <option value="Bucks">Bucks</option>
+        <option value="Bulls">Bulls</option>
+        <option value="Cavaliers">Cavaliers</option>
+        <option value="Celtics">Celtics</option>
+        <option value="Clippers">Clippers</option>
+        <option value="Grizzlies">Grizzlies</option>
+        <option value="Hawks">Hawks</option>
+        <option value="Heat">Heat</option>
+        <option value="Hornets">Hornets</option>
+        <option value="Jazz">Jazz</option>
+        <option value="Kings">Kings</option>
+        <option value="Knicks">Knicks</option>
+        <option value="Lakers">Lakers</option>
+        <option value="Magic">Magic</option>
+        <option value="Mavericks">Mavericks</option>
+        <option value="Nets">Nets</option>
+        <option value="Nuggets">Nuggets</option>
+        <option value="Pacers">Pacers</option>
+        <option value="Pelicans">Pelicans</option>
+        <option value="Pistons">Pistons</option>
+        <option value="Raptors">Raptors</option>
+        <option value="Rockets">Rockets</option>
+        <option value="Spurs">Spurs</option>
+        <option value="Suns">Suns</option>
+        <option value="Thunder">Thunder</option>
+        <option value="Timberwolves">Timberwolves</option>
+        <option value="Trail Blazers">Trail Blazers</option>
+        <option value="Warriors">Warriors</option>
+        <option value="Wizards">Wizards</option>
+    </select>
 
-        <label for="year">Select Year:</label>
-        <select id="year" name="year">
-            <option value="">--Choose Year--</option>
-        </select>
+    <label for="year">Select Year:</label>
+    <select id="year" name="year">
+        <option value="">--Choose Year--</option>
+    </select>
 
-        <button type="submit">Search</button>
-    </form>
+    <button type="submit">Search</button>
+</form>
 
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Player Name</th>
-                <th>Position</th>
-                <th>Points</th>
-                <!-- Add more columns as needed -->
-            </tr>
-        </thead>
-        <tbody id="playerResults"></tbody>
-    </table>
+
+    <div style="display: flex;">
+        <!-- Player Results Table -->
+        <div>
+            <h2>NBA Player Search Results</h2>
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Select</th>
+                    </tr>
+                </thead>
+                <tbody id="playerResults"></tbody>
+            </table>
+        </div>
+
+        <!-- My Team Section -->
+        <div style="margin-left: 50px;">
+            <h2>My Team</h2>
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Remove</th>
+                    </tr>
+                </thead>
+                <tbody id="myTeam"></tbody>
+            </table>
+        </div>
+    </div>
 </body>
 </html>
