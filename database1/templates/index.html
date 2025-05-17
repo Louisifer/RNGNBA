@@ -240,8 +240,15 @@
     // The display name includes the last two digits of the selected year.
     function fetchPlayers(event) {
       event.preventDefault();
-      const team = document.getElementById("team").value;
+      let team = document.getElementById("team").value;
       const year = document.getElementById("year").value;
+      console.log("Selected Team:", team);
+      console.log("Selected Year:", year);
+      // Include historic Seattle data when selecting 'Thunder'
+      if (team === "Thunder" & year < 2008) {
+        console.log("switched thunder and sonics");
+        team = "SuperSonics";
+      }
       fetch(`http://127.0.0.1:5000/get_players?team=${team}&year=${year}`)
         .then(response => response.json())
         .then(data => {
@@ -373,6 +380,7 @@
         reRenderSearchResults();
       }
       toggleTurn();
+      updateTotalScores();
     }
 
     // Toggle the draft turn and update the search results table background.
@@ -424,6 +432,7 @@
       lastRow.appendChild(newCell);
       reRenderSearchResults();
       updateDraftIndicator();
+      updateTotalScores();
     }
 
     // Reassemble the search results table so that players appear in their original order.
@@ -458,8 +467,30 @@
         }
       }
     }
+
+    // Display total RNGscore for each drafted team
+    function updateTotalScores() {
+  let team1Total = 0;
+  let team2Total = 0;
+
+  // Sum the RNG scores for Team 1
+  document.querySelectorAll("#team1Draft tr td:nth-child(2)").forEach(cell => {
+    team1Total += parseFloat(cell.textContent);
+  });
+
+  // Sum the RNG scores for Team 2
+  document.querySelectorAll("#team2Draft tr td:nth-child(2)").forEach(cell => {
+    team2Total += parseFloat(cell.textContent);
+  });
+
+  // Target both team headers correctly
+  const headers = document.querySelectorAll(".box h2");
+  if (headers.length >= 2) {
+    headers[0].textContent = `Team 1 Draft (Total RNG: ${team1Total.toFixed(2)})`;
+    headers[1].textContent = `Team 2 Draft (Total RNG: ${team2Total.toFixed(2)})`;
+  }
+}
+
   </script>
 </body>
 </html>
-
-
