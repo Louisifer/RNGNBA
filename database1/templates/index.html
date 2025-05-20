@@ -46,7 +46,7 @@
         margin: 5px 0;
         font-weight: bold;
       }
-      /* The round history buttons container appears below the round score */
+      /* Round history buttons container (now placed below round scores) */
       #roundHistoryButtons {
         margin: 5px 0;
       }
@@ -227,7 +227,7 @@
           this.selectedPlayers = new Set();
           // Draft order: now the winner of each round gets first pick.
           this.currentTurn = 1;
-          // We'll store the last round winner here.
+          // Store the last round winner.
           this.lastRoundWinner = null;
           this.originalPlayerIndices = new Map();
           // For modal actions. Types: "select", "remove", "roundEnd"
@@ -364,8 +364,9 @@
             }
           });
           this.cache.modalNo.addEventListener("click", () => {
+            // For round end, if No is pressed, show overall round history instead of resetting.
             if (this.pendingAction && this.pendingAction.type === "roundEnd") {
-              this.resetGame();
+              this.showAllRoundHistory();
             }
             this.pendingAction = null;
             this.hideModal();
@@ -512,13 +513,7 @@
                 if (i % 5 === 0) html += "<tr>";
                 const key = `${p.firstName}-${year}-${p.lastName}`;
                 this.originalPlayerIndices.set(key, i);
-                html += this.createPlayerCell(
-                  p.firstName,
-                  p.lastName,
-                  year,
-                  p.avgRNGscore,
-                  i
-                );
+                html += this.createPlayerCell(p.firstName, p.lastName, year, p.avgRNGscore, i);
                 if ((i + 1) % 5 === 0) html += "</tr>";
               });
               if (data.length % 5 !== 0) {
@@ -639,7 +634,7 @@
               losingScore = team2Total;
               this.roundWins[1]++;
             }
-            this.lastRoundWinner = winner; // NEW: store the round winner.
+            this.lastRoundWinner = winner;
             this.pendingAction = { type: "roundEnd" };
             this.cache.modalMessage.textContent = `Team ${winner} wins! ${winningScore.toFixed(2)} to ${losingScore.toFixed(2)}\nPlay another round?`;
             this.showModal();
@@ -669,7 +664,6 @@
           this.roundHistory.push(roundData);
           const btn = document.createElement("button");
           btn.textContent = `Round ${this.currentRound}`;
-          // Color the button by the winning team.
           const teamColors = {
             1: getComputedStyle(document.documentElement).getPropertyValue("--team1-color").trim(),
             2: getComputedStyle(document.documentElement).getPropertyValue("--team2-color").trim(),
@@ -681,7 +675,21 @@
           this.updateRoundWinsDisplay();
         }
 
-        // NEW: The winner of the round now gets first pick in the next round.
+        // NEW: Show overall round history for all rounds played.
+        showAllRoundHistory() {
+          this.hideGameUI();
+          let html = "";
+          this.roundHistory.forEach((roundData) => {
+            html += `<h3>Round ${roundData.round}</h3>`;
+            html += `<p><strong>Team 1:</strong> ${roundData.team1Players.map(p => p.display).join(", ")} (Total: ${roundData.team1Total.toFixed(2)})</p>`;
+            html += `<p><strong>Team 2:</strong> ${roundData.team2Players.map(p => p.display).join(", ")} (Total: ${roundData.team2Total.toFixed(2)})</p>`;
+            html += `<hr/>`;
+          });
+          this.cache.roundHistoryDiv.innerHTML = html;
+          this.cache.roundHistoryContainer.style.display = "block";
+        }
+
+        // The winner of the previous round gets first pick.
         startNextRound() {
           const lastRound = this.roundHistory[this.roundHistory.length - 1];
           lastRound.team1Players.forEach(({ key }) => this.selectedPlayers.add(key));
@@ -690,7 +698,7 @@
           this.cache.team2.innerHTML = "";
           this.teamCounts = { 1: 0, 2: 0 };
           this.currentRound++;
-          this.currentTurn = this.lastRoundWinner; // Set the first pick to the previous round winner.
+          this.currentTurn = this.lastRoundWinner;
           this.updateDraftStatus();
         }
 
@@ -751,6 +759,7 @@
     </script>
   </body>
 </html>
+
 
 
 
