@@ -1,456 +1,766 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RNGNBA Draft</title>
-  <style>
-    /* General Styling */
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    /* Dropdowns and Buttons */
-    select, button {
-      border-radius: 10px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-      margin: 5px;
-    }
-    button[type="submit"] {
-      background-color: #007bff;
-      color: white;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    button[type="submit"]:hover {
-      background-color: #0056b3;
-    }
-    .small-btn {
-      padding: 5px 8px;
-      font-size: 14px;
-      border-radius: 8px;
-      margin-top: 5px;
-    }
-    /* Table Styling */
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 20px;
-      border: 1px solid #ccc;
-    }
-    th, td {
-      padding: 6px;
-      border: 1px solid #ccc;
-      text-align: center;
-      vertical-align: middle;
-    }
-    th {
-      background-color: #f4f4f4;
-    }
-    /* Draft team colors */
-    #team1Draft tr {
-      background-color: lightblue;
-    }
-    #team2Draft tr {
-      background-color: lightcoral;
-    }
-    /* Layout */
-    .container {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 20px;
-    }
-    .box {
-      width: 48%;
-    }
-    /* Draft Indicator */
-    #currentDraft {
-      font-size: 18px;
-      font-weight: bold;
-      margin: 10px 0;
-    }
-    /* Player Cell Styling – ensure 5 cells/row */
-    .player-cell {
-      width: 20%;
-    }
-    /* Modal Styling */
-    #confirmationModal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-      z-index: 1000;
-    }
-    #modalContent {
-      width: 300px;
-      margin: 150px auto;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-    }
-    #modalContent button {
-      margin: 10px;
-    }
-  </style>
-</head>
-<body>
-  <h1>NBA All-Time Draft</h1>
-  <div id="currentDraft">Current Draft Pick: Team 1</div>
-
-  <form id="searchForm">
-    <label for="team">Select Team:</label>
-    <select id="team" name="team"></select>
-    <label for="year">Select Year:</label>
-    <select id="year" name="year">
-      <option value="">--Choose Year--</option>
-    </select>
-    <button type="submit">Search</button>
-  </form>
-
-  <h2>NBA Player Search Results</h2>
-  <table id="searchResultsTable">
-    <tbody id="playerResults"></tbody>
-  </table>
-
-  <div class="container">
-    <div class="box">
-      <h2>Team 1 Draft</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>RNG Score</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="team1Draft"></tbody>
-      </table>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NBA All-Time Draft</title>
+    <style>
+      :root {
+        --font-family: Arial, sans-serif;
+        --padding: 10px;
+        --border-radius: 10px;
+        --border-color: #ccc;
+        --submit-bg: #007bff;
+        --submit-hover-bg: #0056b3;
+        --text-color: #fff;
+        --small-btn-padding: 5px 8px;
+        --small-btn-font-size: 14px;
+        --small-btn-radius: 8px;
+        --team1-color: lightblue;
+        --team2-color: lightcoral;
+        --draft-indicator-font-size: 18px;
+        --draft-indicator-weight: bold;
+        --modal-bg: rgba(0, 0, 0, 0.5);
+        --modal-content-bg: white;
+      }
+      body {
+        font-family: var(--font-family);
+        margin: 20px;
+      }
+      /* Header controls */
+      #gameControls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      #resetButton {
+        background: red;
+        color: white;
+        border-radius: var(--border-radius);
+        padding: var(--padding);
+        border: 1px solid var(--border-color);
+        font-size: 16px;
+      }
+      #roundWins {
+        text-align: right;
+        margin: 5px 0;
+        font-weight: bold;
+      }
+      /* The round history buttons container appears below the round score */
+      #roundHistoryButtons {
+        margin: 5px 0;
+      }
+      /* Current draft indicator */
+      #currentDraft {
+        margin: 5px 0;
+        font-weight: bold;
+      }
+      /* Form and tables */
+      select,
+      button {
+        border-radius: var(--border-radius);
+        padding: var(--padding);
+        border: 1px solid var(--border-color);
+        font-size: 16px;
+        margin: 5px;
+      }
+      button[type="submit"] {
+        background-color: var(--submit-bg);
+        color: var(--text-color);
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      button[type="submit"]:hover {
+        background-color: var(--submit-hover-bg);
+      }
+      .small-btn {
+        padding: var(--small-btn-padding);
+        font-size: var(--small-btn-font-size);
+        border-radius: var(--small-btn-radius);
+        margin-top: 5px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 20px;
+        border: 1px solid var(--border-color);
+      }
+      th,
+      td {
+        padding: 6px;
+        border: 1px solid var(--border-color);
+        text-align: center;
+        vertical-align: middle;
+      }
+      th {
+        background-color: #f4f4f4;
+      }
+      /* Team Draft Table Colors */
+      #team1Draft tr {
+        background-color: var(--team1-color);
+      }
+      #team2Draft tr {
+        background-color: var(--team2-color);
+      }
+      .container {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+      }
+      .box {
+        width: 48%;
+      }
+      /* Modal Styling */
+      #confirmationModal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--modal-bg);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+      #modalContent {
+        width: 300px;
+        background: var(--modal-content-bg);
+        padding: 20px;
+        border-radius: var(--border-radius);
+        text-align: center;
+      }
+      #modalContent button {
+        margin: 10px;
+      }
+      /* Round history view */
+      #roundHistoryContainer {
+        display: none;
+        border: 1px solid var(--border-color);
+        padding: 10px;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header with title, reset button, and round wins -->
+    <div id="gameControls">
+      <h1>NBA All-Time Draft</h1>
+      <button id="resetButton">Reset</button>
     </div>
-    <div class="box">
-      <h2>Team 2 Draft</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>RNG Score</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="team2Draft"></tbody>
-      </table>
+    <div id="roundWins">Team 1 Rounds: 0 | Team 2 Rounds: 0</div>
+    <div id="roundHistoryButtons"></div>
+    <!-- Current draft indicator -->
+    <div id="currentDraft">Current Draft Pick: Team 1</div>
+
+    <!-- Search form -->
+    <form id="searchForm">
+      <label for="team">Select Team:</label>
+      <select id="team" name="team"></select>
+      <label for="year">Select Year:</label>
+      <select id="year" name="year">
+        <option value="">--Choose Year--</option>
+      </select>
+      <button type="submit">Search</button>
+    </form>
+
+    <!-- Search results table -->
+    <h2>NBA Player Search Results</h2>
+    <table id="searchResultsTable">
+      <tbody id="playerResults"></tbody>
+    </table>
+
+    <!-- Draft tables -->
+    <div class="container">
+      <div class="box">
+        <h2>Team 1 Draft</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>RNG Score</th>
+            </tr>
+          </thead>
+          <tbody id="team1Draft"></tbody>
+        </table>
+      </div>
+      <div class="box">
+        <h2>Team 2 Draft</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>RNG Score</th>
+            </tr>
+          </thead>
+          <tbody id="team2Draft"></tbody>
+        </table>
+      </div>
     </div>
-  </div>
 
-  <div id="confirmationModal">
-    <div id="modalContent">
-      <p id="modalMessage">Draft ?</p>
-      <button id="modalYes" class="small-btn">Yes</button>
-      <button id="modalNo" class="small-btn">No</button>
+    <!-- Modal for confirmations and round end -->
+    <div id="confirmationModal">
+      <div id="modalContent">
+        <p id="modalMessage">Modal Message</p>
+        <button id="modalYes" class="small-btn">Yes</button>
+        <button id="modalNo" class="small-btn">No</button>
+      </div>
     </div>
-  </div>
 
-  <script type="module">
-    class DraftApp {
-      constructor() {
-        // Global State
-        this.currentTurn = 1;
-        this.maxPlayers = 5;
-        this.teamCounts = { 1: 0, 2: 0 };
-        this.originalPlayerIndices = new Map();
-        this.pendingSelectEvent = null;
+    <!-- Round history view -->
+    <div id="roundHistoryContainer">
+      <h2>Round History</h2>
+      <div id="roundHistory"></div>
+      <button id="returnToGame" class="small-btn">Return to Game</button>
+    </div>
 
-        // Cache DOM Elements
-        this.team1DraftElem = document.getElementById("team1Draft");
-        this.team2DraftElem = document.getElementById("team2Draft");
-        this.playerResultsElem = document.getElementById("playerResults");
-        this.currentDraftIndicator = document.getElementById("currentDraft");
-        this.confirmationModal = document.getElementById("confirmationModal");
-        this.modalMessageElem = document.getElementById("modalMessage");
-        this.searchResultsTable = document.getElementById("searchResultsTable");
-        this.teamSelectElem = document.getElementById("team");
-        this.yearSelectElem = document.getElementById("year");
-        this.searchForm = document.getElementById("searchForm");
-        this.modalYes = document.getElementById("modalYes");
-        this.modalNo = document.getElementById("modalNo");
+    <script type="module">
+      class DraftApp {
+        constructor() {
+          // Game state
+          this.maxPlayers = 5;
+          this.currentRound = 1;
+          this.teamCounts = { 1: 0, 2: 0 };
+          this.roundWins = { 1: 0, 2: 0 };
+          this.roundHistory = []; // Array of round data objects
+          // Set of permanently selected players (key: "firstName-year-lastName")
+          this.selectedPlayers = new Set();
+          // Draft order: now the winner of each round gets first pick.
+          this.currentTurn = 1;
+          // We'll store the last round winner here.
+          this.lastRoundWinner = null;
+          this.originalPlayerIndices = new Map();
+          // For modal actions. Types: "select", "remove", "roundEnd"
+          this.pendingAction = null;
 
-        // Static Data: Teams and Available Years
-        this.teams = [
-          "76ers", "Bucks", "Bulls", "Cavaliers", "Celtics", "Clippers", "Grizzlies",
-          "Hawks", "Heat", "Hornets", "Jazz", "Kings", "Knicks", "Lakers", "Magic",
-          "Mavericks", "Nets", "Nuggets", "Pacers", "Pelicans", "Pistons", "Raptors",
-          "Rockets", "Spurs", "Suns", "Thunder", "Timberwolves", "Trail Blazers",
-          "Warriors", "Wizards"
-        ];
-        this.startYear = 1976;
-        this.endYear = 2024;
-        this.teamYears = Object.fromEntries(
-          this.teams.map(team => [
-            team,
-            Array.from({ length: this.endYear - this.startYear + 1 }, (_, i) => this.startYear + i)
-          ])
-        );
-      }
+          // Cache frequently used DOM elements.
+          this.cache = {
+            team1: document.getElementById("team1Draft"),
+            team2: document.getElementById("team2Draft"),
+            playerResults: document.getElementById("playerResults"),
+            currentDraft: document.getElementById("currentDraft"),
+            confirmationModal: document.getElementById("confirmationModal"),
+            modalMessage: document.getElementById("modalMessage"),
+            searchResultsTable: document.getElementById("searchResultsTable"),
+            teamSelect: document.getElementById("team"),
+            yearSelect: document.getElementById("year"),
+            searchForm: document.getElementById("searchForm"),
+            modalYes: document.getElementById("modalYes"),
+            modalNo: document.getElementById("modalNo"),
+            headers: document.querySelectorAll(".box h2"),
+            roundWins: document.getElementById("roundWins"),
+            resetButton: document.getElementById("resetButton"),
+            roundHistoryButtons: document.getElementById("roundHistoryButtons"),
+            roundHistoryContainer: document.getElementById("roundHistoryContainer"),
+            roundHistoryDiv: document.getElementById("roundHistory"),
+            returnToGame: document.getElementById("returnToGame")
+          };
 
-      init() {
-        // Bind events and initialize UI
-        this.bindEvents();
-        this.populateDropdown(this.teamSelectElem, this.teams, "--Choose Team--");
-        this.updateYearOptions();
-        this.updateDraftIndicator();
-      }
-
-      bindEvents() {
-        // Form submission for players fetch
-        this.searchForm.addEventListener("submit", (e) => this.fetchPlayers(e));
-
-        // Update year dropdown when team changes
-        this.teamSelectElem.addEventListener("change", () => this.updateYearOptions());
-
-        // Global event delegation for button clicks
-        document.addEventListener("click", (e) => {
-          if (e.target.matches(".select-btn")) {
-            this.confirmDraft(e);
-          } else if (e.target.matches(".remove-btn")) {
-            this.removePlayer(e);
-          }
-        });
-
-        // Modal button events using arrow functions
-        this.modalYes.addEventListener("click", () => {
-          this.pendingSelectEvent && this.selectPlayer(this.pendingSelectEvent);
-          this.hideModal();
-          this.pendingSelectEvent = null;
-        });
-        this.modalNo.addEventListener("click", () => {
-          this.hideModal();
-          this.pendingSelectEvent = null;
-        });
-      }
-
-      populateDropdown(selectElem, options, defaultText) {
-        selectElem.innerHTML =
-          `<option value="">${defaultText}</option>` +
-          options.map(opt => `<option value="${opt}">${opt}</option>`).join("");
-      }
-
-      createPlayerCellHTML(firstName, lastName, year, avgRNGscore, index) {
-        const displayName = `${year.slice(-2)} ${firstName} ${lastName}`;
-        return `<td class="player-cell" data-index="${index}">
-                  <button class="small-btn select-btn"
-                          data-firstname="${firstName}"
-                          data-lastname="${lastName}"
-                          data-year="${year}"
-                          data-score="${avgRNGscore}">
-                    ${displayName}
-                  </button>
-                </td>`;
-      }
-
-      updateYearOptions() {
-        const team = this.teamSelectElem.value;
-        const previousYear = this.yearSelectElem.value;
-        if (this.teamYears[team]) {
-          this.populateDropdown(this.yearSelectElem, this.teamYears[team], "--Choose Year--");
-          if (this.teamYears[team].includes(Number(previousYear))) {
-            this.yearSelectElem.value = previousYear;
-          }
-        } else {
-          this.populateDropdown(this.yearSelectElem, [], "--Choose Year--");
+          // Available teams and years.
+          this.teams = [
+            "76ers",
+            "Bucks",
+            "Bulls",
+            "Cavaliers",
+            "Celtics",
+            "Clippers",
+            "Grizzlies",
+            "Hawks",
+            "Heat",
+            "Hornets",
+            "Jazz",
+            "Kings",
+            "Knicks",
+            "Lakers",
+            "Magic",
+            "Mavericks",
+            "Nets",
+            "Nuggets",
+            "Pacers",
+            "Pelicans",
+            "Pistons",
+            "Raptors",
+            "Rockets",
+            "Spurs",
+            "Suns",
+            "Thunder",
+            "Timberwolves",
+            "Trail Blazers",
+            "Warriors",
+            "Wizards"
+          ];
+          this.startYear = 1976;
+          this.endYear = 2024;
+          this.years = {};
+          this.teams.forEach((team) => {
+            this.years[team] = Array.from(
+              { length: this.endYear - this.startYear + 1 },
+              (_, i) => this.startYear + i
+            );
+          });
         }
-      }
 
-      updateDraftIndicator() {
-        if (this.currentTurn === 1) {
-          this.currentDraftIndicator.textContent = "Current Draft Pick: Team 1";
-          this.searchResultsTable.style.backgroundColor = "lightblue";
-        } else if (this.currentTurn === 2) {
-          this.currentDraftIndicator.textContent = "Current Draft Pick: Team 2";
-          this.searchResultsTable.style.backgroundColor = "lightcoral";
-        } else {
-          this.currentDraftIndicator.textContent = "Draft Complete!";
-          this.searchResultsTable.style.backgroundColor = "white";
+        init() {
+          this.bindEvents();
+          this.populateDropdown(this.cache.teamSelect, this.teams, "--Choose Team--");
+          this.updateYearOptions();
+          this.updateDraftIndicator();
+          this.updateRoundWinsDisplay();
         }
-      }
 
-      updateTotalScores() {
-        const sumScores = (selector) =>
-          Array.from(document.querySelectorAll(selector))
-            .reduce((total, cell) => total + parseFloat(cell.textContent), 0);
-        const team1Total = sumScores("#team1Draft tr td:nth-child(2)");
-        const team2Total = sumScores("#team2Draft tr td:nth-child(2)");
-        const headers = document.querySelectorAll(".box h2");
-        if (headers.length >= 2) {
-          headers[0].textContent = `Team 1 Draft (Total RNG: ${team1Total.toFixed(2)})`;
-          headers[1].textContent = `Team 2 Draft (Total RNG: ${team2Total.toFixed(2)})`;
-        }
-      }
+        bindEvents() {
+          this.cache.searchForm.addEventListener("submit", (e) =>
+            this.fetchPlayers(e)
+          );
+          this.cache.teamSelect.addEventListener("change", () =>
+            this.updateYearOptions()
+          );
+          this.cache.resetButton.addEventListener("click", () => this.resetGame());
+          this.cache.returnToGame.addEventListener("click", () => {
+            this.cache.roundHistoryContainer.style.display = "none";
+            this.showGameUI();
+          });
 
-      updateDraftStatus() {
-        this.updateDraftIndicator();
-        this.updateTotalScores();
-      }
-
-      // Helper: Normalize team name for historic data.
-      normalizeTeamName(team, year) {
-        return team === "Thunder" && year < 2008 ? "SuperSonics" : team;
-      }
-
-      fetchPlayers(event) {
-        event.preventDefault();
-        let team = this.teamSelectElem.value;
-        const year = this.yearSelectElem.value;
-        team = this.normalizeTeamName(team, year);
-        fetch(`http://127.0.0.1:5000/get_players?team=${team}&year=${year}`)
-          .then(response => response.json())
-          .then(data => {
-            this.playerResultsElem.innerHTML = "";
-            this.originalPlayerIndices.clear();
-            if (!data.length) {
-              this.playerResultsElem.innerHTML =
-                `<tr><td colspan="5">No players found for the selected team and year.</td></tr>`;
-              return;
-            }
-            let html = "";
-            data.forEach((player, i) => {
-              if (i % 5 === 0) html += "<tr>";
-              const key = `${player.firstName}-${year}-${player.lastName}`;
-              this.originalPlayerIndices.set(key, i);
-              html += this.createPlayerCellHTML(
-                player.firstName,
-                player.lastName,
-                year,
-                player.avgRNGscore,
-                i
+          // Use event delegation for dynamic buttons (select and remove).
+          document.addEventListener("click", (e) => {
+            const selectBtn = e.target.closest(".select-btn");
+            const removeBtn = e.target.closest(".remove-player-btn");
+            if (selectBtn) {
+              this.setPendingAction(
+                "select",
+                e,
+                `Draft ${this.formatPlayerName(
+                  selectBtn.dataset.firstname,
+                  selectBtn.dataset.lastname,
+                  selectBtn.dataset.year
+                )}?`
               );
-              if ((i + 1) % 5 === 0) html += "</tr>";
-            });
-            if (data.length % 5 !== 0) {
-              html += Array.from({ length: 5 - (data.length % 5) }, () => `<td class="player-cell"></td>`).join('') + "</tr>";
+            } else if (removeBtn) {
+              this.setPendingAction(
+                "remove",
+                e,
+                `Remove ${this.formatPlayerName(
+                  removeBtn.dataset.firstname,
+                  removeBtn.dataset.lastname,
+                  removeBtn.dataset.year
+                )} from your team?`
+              );
             }
-            this.playerResultsElem.innerHTML = html;
-          })
-          .catch(error => console.error("Error fetching data:", error));
-      }
+          });
 
-      confirmDraft(event) {
-        event.preventDefault();
-        this.pendingSelectEvent = event;
-        const { firstname, lastname, year } = event.target.dataset;
-        const displayName = `${year.slice(-2)} ${firstname} ${lastname}`;
-        this.modalMessageElem.textContent = `Draft ${displayName}?`;
-        this.showModal();
-      }
-
-      showModal() {
-        this.confirmationModal.style.display = "block";
-      }
-
-      hideModal() {
-        this.confirmationModal.style.display = "none";
-      }
-
-      selectPlayer(event) {
-        const { firstname, lastname, year, score } = event.target.dataset;
-        const draftId = `draft-${year}-${firstname}-${lastname}`;
-        if (document.getElementById(draftId)) {
-          event.target.closest("td").remove();
-          return;
+          // Modal confirmation
+          this.cache.modalYes.addEventListener("click", () => {
+            const action = this.pendingAction;
+            this.pendingAction = null;
+            this.hideModal();
+            if (action) {
+              if (action.type === "select") {
+                this.selectPlayer(action.event);
+              } else if (action.type === "remove") {
+                this.removePlayer(action.event);
+              } else if (action.type === "roundEnd") {
+                this.startNextRound();
+              }
+            }
+          });
+          this.cache.modalNo.addEventListener("click", () => {
+            if (this.pendingAction && this.pendingAction.type === "roundEnd") {
+              this.resetGame();
+            }
+            this.pendingAction = null;
+            this.hideModal();
+          });
         }
-        const teamNames = { 1: "Team 1", 2: "Team 2" };
-        if (this.teamCounts[this.currentTurn] >= this.maxPlayers) {
-          alert(`${teamNames[this.currentTurn]} is already full!`);
-          return;
+
+        populateDropdown(selectElem, options, defaultText) {
+          selectElem.innerHTML =
+            `<option value="">${defaultText}</option>` +
+            options.map((o) => `<option value="${o}">${o}</option>`).join("");
         }
-        const targetTbody = this.currentTurn === 1 ? this.team1DraftElem : this.team2DraftElem;
-        this.teamCounts[this.currentTurn]++;
-        const rowHTML = `
-          <tr id="${draftId}">
-            <td>${year.slice(-2)} ${firstname} ${lastname}</td>
-            <td>${parseFloat(score).toFixed(2)}</td>
-            <td>
-              <button class="small-btn remove-btn"
-                      data-firstname="${firstname}"
-                      data-lastname="${lastname}"
+
+        updateYearOptions() {
+          const team = this.cache.teamSelect.value;
+          const prev = this.cache.yearSelect.value;
+          if (this.years[team]) {
+            this.populateDropdown(
+              this.cache.yearSelect,
+              this.years[team],
+              "--Choose Year--"
+            );
+            if (this.years[team].includes(Number(prev))) {
+              this.cache.yearSelect.value = prev;
+            }
+          } else {
+            this.populateDropdown(this.cache.yearSelect, [], "--Choose Year--");
+          }
+        }
+
+        updateDraftIndicator() {
+          const colors = {
+            1: "var(--team1-color)",
+            2: "var(--team2-color)",
+          };
+          if (this.currentTurn) {
+            const text =
+              this.currentTurn === 1
+                ? "Current Draft Pick: Team 1"
+                : "Current Draft Pick: Team 2";
+            this.cache.currentDraft.textContent = text;
+            this.cache.searchResultsTable.style.backgroundColor =
+              colors[this.currentTurn];
+          } else {
+            this.cache.currentDraft.textContent = "Draft Complete!";
+            this.cache.searchResultsTable.style.backgroundColor = "white";
+          }
+        }
+
+        updateTotalScores() {
+          const sum = (sel) =>
+            [...document.querySelectorAll(sel)].reduce(
+              (total, el) => total + parseFloat(el.textContent),
+              0
+            );
+          const t1 = sum("#team1Draft tr td:nth-child(2)");
+          const t2 = sum("#team2Draft tr td:nth-child(2)");
+          this.cache.headers[0].textContent = `Team 1 Draft (Total RNG: ${t1.toFixed(
+            2
+          )})`;
+          this.cache.headers[1].textContent = `Team 2 Draft (Total RNG: ${t2.toFixed(
+            2
+          )})`;
+        }
+
+        updateDraftStatus() {
+          this.updateDraftIndicator();
+          this.updateTotalScores();
+        }
+
+        recalcTurn() {
+          const total = this.teamCounts[1] + this.teamCounts[2];
+          if (
+            this.teamCounts[1] < this.maxPlayers &&
+            this.teamCounts[2] < this.maxPlayers
+          ) {
+            this.currentTurn = total % 2 === 0 ? 1 : 2;
+          } else if (this.teamCounts[1] < this.maxPlayers) {
+            this.currentTurn = 1;
+          } else if (this.teamCounts[2] < this.maxPlayers) {
+            this.currentTurn = 2;
+          } else {
+            this.currentTurn = null;
+          }
+          this.updateDraftStatus();
+        }
+
+        formatPlayerName(firstName, lastName, year) {
+          return `${String(year).slice(-2)} ${firstName} ${lastName}`;
+        }
+
+        createPlayerCell(firstName, lastName, year, score, idx) {
+          const display = this.formatPlayerName(firstName, lastName, year);
+          return `<td class="player-cell" data-index="${idx}">
+                    <button class="small-btn select-btn"
+                      data-firstname="${firstName}"
+                      data-lastname="${lastName}"
                       data-year="${year}"
                       data-score="${score}">
-                Remove
-              </button>
-            </td>
-          </tr>`;
-        targetTbody.insertAdjacentHTML("beforeend", rowHTML);
-        // Remove from search results
-        const cell = event.target.closest("td");
-        if (cell) {
-          cell.remove();
-          this.reRenderSearchResults();
+                      ${display}
+                    </button>
+                  </td>`;
         }
-        this.toggleTurn();
-        this.updateDraftStatus();
-      }
 
-      toggleTurn() {
-        this.currentTurn =
-          this.teamCounts[1] < this.maxPlayers && this.teamCounts[2] < this.maxPlayers
-            ? this.currentTurn === 1 ? 2 : 1
-            : this.teamCounts[1] < this.maxPlayers ? 1 : this.teamCounts[2] < this.maxPlayers ? 2 : null;
-        this.updateDraftStatus();
-      }
+        createDraftedPlayerRow(firstName, lastName, year, score) {
+          const display = this.formatPlayerName(firstName, lastName, year);
+          return `<tr id="draft-${year}-${firstName}-${lastName}">
+                    <td>
+                      <button class="small-btn remove-player-btn"
+                        data-firstname="${firstName}"
+                        data-lastname="${lastName}"
+                        data-year="${year}"
+                        data-score="${score}">
+                        ${display}
+                      </button>
+                    </td>
+                    <td>${parseFloat(score).toFixed(2)}</td>
+                  </tr>`;
+        }
 
-      removePlayer(event) {
-        const { firstname, lastname, year, score } = event.target.dataset;
-        const row = event.target.closest("tr");
-        const parentId = row.parentElement.id;
-        if (parentId === "team1Draft") {
-          this.teamCounts[1]--;
+        filterPlayers(data, year) {
+          return data.filter((p) => {
+            const key = `${p.firstName}-${year}-${p.lastName}`;
+            return !this.selectedPlayers.has(key);
+          });
+        }
+
+        fetchPlayers(e) {
+          e.preventDefault();
+          let team = this.cache.teamSelect.value;
+          const year = this.cache.yearSelect.value;
+          team = this.normalizeTeam(team, year);
+          fetch(`http://127.0.0.1:5000/get_players?team=${team}&year=${year}`)
+            .then((res) => res.json())
+            .then((data) => {
+              data = this.filterPlayers(data, year);
+              this.cache.playerResults.innerHTML = "";
+              this.originalPlayerIndices.clear();
+              if (!data.length) {
+                this.cache.playerResults.innerHTML = `<tr><td colspan="5">No players found for the selected team and year.</td></tr>`;
+                return;
+              }
+              let html = "";
+              data.forEach((p, i) => {
+                if (i % 5 === 0) html += "<tr>";
+                const key = `${p.firstName}-${year}-${p.lastName}`;
+                this.originalPlayerIndices.set(key, i);
+                html += this.createPlayerCell(
+                  p.firstName,
+                  p.lastName,
+                  year,
+                  p.avgRNGscore,
+                  i
+                );
+                if ((i + 1) % 5 === 0) html += "</tr>";
+              });
+              if (data.length % 5 !== 0) {
+                html +=
+                  Array.from({ length: 5 - (data.length % 5) }, () => `<td class="player-cell"></td>`).join('') +
+                  "</tr>";
+              }
+              this.cache.playerResults.innerHTML = html;
+            })
+            .catch((err) => {
+              console.error(err);
+              alert("Error fetching data.");
+            });
+        }
+
+        normalizeTeam(team, year) {
+          return team === "Thunder" && year < 2008 ? "SuperSonics" : team;
+        }
+
+        setPendingAction(type, event, promptMsg) {
+          event.preventDefault();
+          this.pendingAction = { type, event };
+          this.cache.modalMessage.textContent = promptMsg;
+          this.showModal();
+        }
+
+        showModal() {
+          this.cache.confirmationModal.style.display = "flex";
+        }
+
+        hideModal() {
+          this.cache.confirmationModal.style.display = "none";
+        }
+
+        selectPlayer(e) {
+          const { firstname, lastname, year, score } = e.target.dataset;
+          const id = `draft-${year}-${firstname}-${lastname}`;
+          if (document.getElementById(id)) {
+            e.target.closest("td").remove();
+            return;
+          }
+          if (this.teamCounts[this.currentTurn] >= this.maxPlayers) {
+            alert(`Team ${this.currentTurn} is full!`);
+            return;
+          }
+          const target = this.currentTurn === 1 ? this.cache.team1 : this.cache.team2;
+          this.teamCounts[this.currentTurn]++;
+          target.insertAdjacentHTML("beforeend", this.createDraftedPlayerRow(firstname, lastname, year, score));
+          const cell = e.target.closest("td");
+          if (cell) {
+            cell.remove();
+            this.rebuildResults();
+          }
+          this.recalcTurn();
+          this.checkRoundCompletion();
+        }
+
+        removePlayer(e) {
+          const { firstname, lastname, year, score } = e.target.dataset;
+          const row = e.target.closest("tr");
+          if (!row) return;
+          row.remove();
+          if (row.parentElement.id === "team1Draft") {
+            this.teamCounts[1]--;
+            this.currentTurn = 1;
+          } else {
+            this.teamCounts[2]--;
+            this.currentTurn = 2;
+          }
+          const key = `${firstname}-${year}-${lastname}`;
+          const idx = this.originalPlayerIndices.get(key);
+          const cellHTML = this.createPlayerCell(firstname, lastname, year, score, idx);
+          let lastRow = this.cache.playerResults.lastElementChild;
+          if (!lastRow || lastRow.children.length >= 5) {
+            this.cache.playerResults.insertAdjacentHTML("beforeend", `<tr>${cellHTML}</tr>`);
+          } else {
+            lastRow.insertAdjacentHTML("beforeend", cellHTML);
+          }
+          this.rebuildResults();
+          this.recalcTurn();
+        }
+
+        rebuildResults() {
+          const cells = [...this.cache.playerResults.querySelectorAll("td[data-index]")];
+          cells.sort((a, b) => +a.dataset.index - +b.dataset.index);
+          let html = "";
+          cells.forEach((cell, i) => {
+            if (i % 5 === 0) html += "<tr>";
+            html += cell.outerHTML;
+            if ((i + 1) % 5 === 0) html += "</tr>";
+          });
+          if (cells.length % 5 !== 0) {
+            html += Array.from({ length: 5 - (cells.length % 5) }, () => `<td class="player-cell"></td>`).join('') + "</tr>";
+          }
+          this.cache.playerResults.innerHTML = html;
+        }
+
+        checkRoundCompletion() {
+          if (this.teamCounts[1] === this.maxPlayers && this.teamCounts[2] === this.maxPlayers) {
+            const sumScores = (selector) =>
+              [...document.querySelectorAll(selector)].reduce((s, el) => s + parseFloat(el.textContent), 0);
+            const team1Total = sumScores("#team1Draft tr td:nth-child(2)");
+            const team2Total = sumScores("#team2Draft tr td:nth-child(2)");
+            let winner, winningScore, losingScore;
+            if (team1Total > team2Total) {
+              winner = 1;
+              winningScore = team1Total;
+              losingScore = team2Total;
+              this.roundWins[1]++;
+            } else if (team2Total > team1Total) {
+              winner = 2;
+              winningScore = team2Total;
+              losingScore = team1Total;
+              this.roundWins[2]++;
+            } else {
+              winner = 1;
+              winningScore = team1Total;
+              losingScore = team2Total;
+              this.roundWins[1]++;
+            }
+            this.lastRoundWinner = winner; // NEW: store the round winner.
+            this.pendingAction = { type: "roundEnd" };
+            this.cache.modalMessage.textContent = `Team ${winner} wins! ${winningScore.toFixed(2)} to ${losingScore.toFixed(2)}\nPlay another round?`;
+            this.showModal();
+            this.recordRoundHistory(team1Total, team2Total, winner);
+          }
+        }
+
+        recordRoundHistory(team1Total, team2Total, winner) {
+          const team1Buttons = [...this.cache.team1.querySelectorAll("button.remove-player-btn")];
+          const team2Buttons = [...this.cache.team2.querySelectorAll("button.remove-player-btn")];
+          const team1Players = team1Buttons.map((btn) => ({
+            key: `${btn.dataset.firstname}-${btn.dataset.year}-${btn.dataset.lastname}`,
+            display: this.formatPlayerName(btn.dataset.firstname, btn.dataset.lastname, btn.dataset.year),
+          }));
+          const team2Players = team2Buttons.map((btn) => ({
+            key: `${btn.dataset.firstname}-${btn.dataset.year}-${btn.dataset.lastname}`,
+            display: this.formatPlayerName(btn.dataset.firstname, btn.dataset.lastname, btn.dataset.year),
+          }));
+          const roundData = {
+            round: this.currentRound,
+            team1Players,
+            team2Players,
+            team1Total,
+            team2Total,
+            winner,
+          };
+          this.roundHistory.push(roundData);
+          const btn = document.createElement("button");
+          btn.textContent = `Round ${this.currentRound}`;
+          // Color the button by the winning team.
+          const teamColors = {
+            1: getComputedStyle(document.documentElement).getPropertyValue("--team1-color").trim(),
+            2: getComputedStyle(document.documentElement).getPropertyValue("--team2-color").trim(),
+          };
+          btn.style.backgroundColor = teamColors[winner] || "gray";
+          btn.classList.add("small-btn");
+          btn.addEventListener("click", () => this.showRoundHistory(roundData));
+          this.cache.roundHistoryButtons.appendChild(btn);
+          this.updateRoundWinsDisplay();
+        }
+
+        // NEW: The winner of the round now gets first pick in the next round.
+        startNextRound() {
+          const lastRound = this.roundHistory[this.roundHistory.length - 1];
+          lastRound.team1Players.forEach(({ key }) => this.selectedPlayers.add(key));
+          lastRound.team2Players.forEach(({ key }) => this.selectedPlayers.add(key));
+          this.cache.team1.innerHTML = "";
+          this.cache.team2.innerHTML = "";
+          this.teamCounts = { 1: 0, 2: 0 };
+          this.currentRound++;
+          this.currentTurn = this.lastRoundWinner; // Set the first pick to the previous round winner.
+          this.updateDraftStatus();
+        }
+
+        showRoundHistory(roundData) {
+          this.hideGameUI();
+          const html = `
+            <h3>Round ${roundData.round}</h3>
+            <p><strong>Team 1:</strong> ${roundData.team1Players.map(p => p.display).join(", ")} (Total: ${roundData.team1Total.toFixed(2)})</p>
+            <p><strong>Team 2:</strong> ${roundData.team2Players.map(p => p.display).join(", ")} (Total: ${roundData.team2Total.toFixed(2)})</p>
+          `;
+          this.cache.roundHistoryDiv.innerHTML = html;
+          this.cache.roundHistoryContainer.style.display = "block";
+        }
+
+        hideGameUI() {
+          this.cache.searchForm.style.display = "none";
+          this.cache.searchResultsTable.style.display = "none";
+          document.querySelector(".container").style.display = "none";
+          this.cache.currentDraft.style.display = "none";
+          this.cache.roundHistoryButtons.style.display = "none";
+          this.cache.roundWins.style.display = "none";
+        }
+
+        showGameUI() {
+          this.cache.searchForm.style.display = "block";
+          this.cache.searchResultsTable.style.display = "table";
+          document.querySelector(".container").style.display = "flex";
+          this.cache.currentDraft.style.display = "block";
+          this.cache.roundHistoryButtons.style.display = "block";
+          this.cache.roundWins.style.display = "block";
+          this.cache.roundHistoryContainer.style.display = "none";
+        }
+
+        updateRoundWinsDisplay() {
+          this.cache.roundWins.textContent = `Team 1 Rounds: ${this.roundWins[1]} | Team 2 Rounds: ${this.roundWins[2]}`;
+        }
+
+        resetGame() {
+          this.currentRound = 1;
+          this.teamCounts = { 1: 0, 2: 0 };
+          this.roundWins = { 1: 0, 2: 0 };
+          this.roundHistory = [];
+          this.selectedPlayers.clear();
           this.currentTurn = 1;
-        } else if (parentId === "team2Draft") {
-          this.teamCounts[2]--;
-          this.currentTurn = 2;
+          this.cache.team1.innerHTML = "";
+          this.cache.team2.innerHTML = "";
+          this.cache.playerResults.innerHTML = "";
+          this.originalPlayerIndices.clear();
+          this.cache.roundHistoryButtons.innerHTML = "";
+          this.updateDraftStatus();
+          this.updateRoundWinsDisplay();
+          this.showGameUI();
         }
-        row.remove();
-        const key = `${firstname}-${year}-${lastname}`;
-        const originalIndex = this.originalPlayerIndices.get(key);
-        const cellHTML = this.createPlayerCellHTML(firstname, lastname, year, score, originalIndex);
-        let lastRow = this.playerResultsElem.lastElementChild;
-        if (!lastRow || lastRow.children.length >= 5) {
-          this.playerResultsElem.insertAdjacentHTML("beforeend", `<tr>${cellHTML}</tr>`);
-        } else {
-          lastRow.insertAdjacentHTML("beforeend", cellHTML);
-        }
-        this.reRenderSearchResults();
-        this.updateDraftStatus();
       }
 
-      reRenderSearchResults() {
-        const tbody = this.playerResultsElem;
-        const cells = Array.from(tbody.querySelectorAll("td[data-index]"));
-        cells.sort((a, b) => parseInt(a.getAttribute("data-index"), 10) - parseInt(b.getAttribute("data-index"), 10));
-        let html = "";
-        cells.forEach((cell, i) => {
-          if (i % 5 === 0) html += "<tr>";
-          html += cell.outerHTML;
-          if ((i + 1) % 5 === 0) html += "</tr>";
-        });
-        if (cells.length % 5 !== 0) {
-          html += Array.from({ length: 5 - (cells.length % 5) }, () => `<td class="player-cell"></td>`).join('') + "</tr>";
-        }
-        tbody.innerHTML = html;
-      }
-    }
-
-    // Instantiate and initialize the Draft App
-    const draftApp = new DraftApp();
-    window.addEventListener("DOMContentLoaded", () => {
-      draftApp.init();
-    });
-  </script>
-</body>
+      const app = new DraftApp();
+      window.addEventListener("DOMContentLoaded", () => app.init());
+    </script>
+  </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
 
 
