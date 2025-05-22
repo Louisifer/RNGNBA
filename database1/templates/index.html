@@ -106,6 +106,7 @@
         border: 1px solid var(--border-color);
         text-align: center;
         vertical-align: middle;
+        word-wrap: break-word;
       }
       th {
         background-color: #f4f4f4;
@@ -123,15 +124,34 @@
         align-items: center;
         justify-content: center;
       }
+      /* Responsive modal content with margin */
       #modalContent {
-        width: 300px;
+        max-width: 90%;
+        width: auto;
         background: var(--modal-content-bg);
         padding: 20px;
         border-radius: var(--border-radius);
         text-align: center;
+        margin: 20px;
+        box-sizing: border-box;
       }
-      #modalContent button {
-        margin: 10px;
+      /* New CSS for modal columns to center the content */
+      #modalContent .modal-columns {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+      #modalContent .modal-column {
+        flex: 1 1 45%;
+        max-width: 45%;
+        text-align: center;
+      }
+      #modalContent table {
+        width: 100%;
+        table-layout: auto;
+        word-wrap: break-word;
+        margin-top: 10px;
       }
       /* Round history view */
       #roundHistoryContainer {
@@ -170,9 +190,7 @@
       <label for="team">Select Team:</label>
       <select id="team" name="team"></select>
       <label for="year">Select Year:</label>
-      <select id="year" name="year">
-        <option value="">--Choose Year--</option>
-      </select>
+      <select id="year" name="year"></select>
       <button type="submit">Search</button>
     </form>
     
@@ -319,7 +337,11 @@
           this.originalPlayerIndices = new Map();
           this.pendingAction = null; // "remove", "roundEnd", or "manualWinner"
           this.activePosition = null;
-          this.showScores = true; // When false (Elite mode) RNG scores are hidden.
+          // In normal mode we might toggle RNG scores; in elite mode we always show them.
+          this.showScores = true;
+          // Flag for elite mode and a counter to limit random tries.
+          this.eliteMode = false;
+          this.randomDataTries = 0;
     
           // Cache frequently used DOM elements.
           this.cache = {
@@ -355,6 +377,7 @@
           ];
           this.startYear = 1976;
           this.endYear = 2024;
+          // Build an independent year list for dropdown.
           this.years = {};
           this.teams.forEach(team => {
             this.years[team] = Array.from({ length: this.endYear - this.startYear + 1 }, (_, i) => this.startYear + i);
@@ -362,8 +385,11 @@
         }
     
         init() {
+          // Cache the container holding both team draft tables.
+          this.cache.draftContainer = document.querySelector(".container");
           this.bindEvents();
           this.populateDropdown(this.cache.teamSelect, this.teams, "--Choose Team--");
+          // Populate the year dropdown with all years independently.
           this.updateYearOptions();
           this.updateDraftIndicator();
           this.updateRoundWinsDisplay();
@@ -454,16 +480,16 @@
             options.map(o => `<option value="${o}">${o}</option>`).join("");
         }
     
+        // Updated so that the year dropdown is independent of team selection.
         updateYearOptions() {
-          const team = this.cache.teamSelect.value;
           const prev = this.cache.yearSelect.value;
-          if (this.years[team]) {
-            this.populateDropdown(this.cache.yearSelect, this.years[team], "--Choose Year--");
-            if (this.years[team].includes(Number(prev))) {
-              this.cache.yearSelect.value = prev;
-            }
-          } else {
-            this.populateDropdown(this.cache.yearSelect, [], "--Choose Year--");
+          const allYears = Array.from(
+            { length: this.endYear - this.startYear + 1 },
+            (_, i) => this.startYear + i
+          );
+          this.populateDropdown(this.cache.yearSelect, allYears, "--Choose Year--");
+          if (allYears.includes(Number(prev))) {
+            this.cache.yearSelect.value = prev;
           }
         }
     
@@ -573,10 +599,24 @@
               data = this.filterPlayers(data, year);
               this.originalPlayerIndices.clear();
               if (!data.length) {
-                this.cache.playerResults.innerHTML =
-                  `<tr><td colspan="5">No players found for the selected team and year.</td></tr>`;
+                if (this.eliteMode) {
+                  // Increment the try counter and silently try another random selection.
+                  this.randomDataTries++;
+                  if (this.randomDataTries < 10) {
+                    this.cache.playerResults.innerHTML = ""; // Clear previous results.
+                    this.tryRandomSelection();
+                  } else {
+                    // After 10 tries, show the Golden Goose modal.
+                    this.showGoldenGooseModal();
+                  }
+                } else {
+                  this.cache.playerResults.innerHTML =
+                    `<tr><td colspan="5">No players found for the selected team and year.</td></tr>`;
+                }
                 return;
               }
+              // Success—reset the try counter.
+              this.randomDataTries = 0;
               const cellsData = data.map((p, i) => {
                 const key = this.getPlayerKey(p.firstName, p.lastName, year);
                 this.originalPlayerIndices.set(key, i);
@@ -589,7 +629,18 @@
             })
             .catch(err => {
               console.error(err);
-              alert("Error fetching data.");
+              if (this.eliteMode) {
+                // Clear previous results if any and silently try another random selection on errors.
+                this.cache.playerResults.innerHTML = "";
+                this.randomDataTries++;
+                if (this.randomDataTries < 10) {
+                  this.tryRandomSelection();
+                } else {
+                  this.showGoldenGooseModal();
+                }
+              } else {
+                alert("Error fetching data.");
+              }
             });
         }
     
@@ -617,6 +668,24 @@
     
         hideModal() {
           this.cache.confirmationModal.style.display = "none";
+        }
+    
+        // Show the Golden Goose modal after 10 unsuccessful random selections.
+        showGoldenGooseModal() {
+          this.cache.modalMessage.innerHTML = `<div style="margin-bottom: 10px;">Golden Goose! You get to choose!</div>
+                                                <button id="goldenGooseBtn" class="small-btn">okay..?</button>`;
+          this.showModal();
+          const goldenBtn = document.getElementById("goldenGooseBtn");
+          if (goldenBtn) {
+            goldenBtn.addEventListener("click", () => {
+              this.hideModal();
+              // Turn off elite mode so the user can select team and year manually.
+              this.eliteMode = false;
+              this.cache.teamSelect.disabled = false;
+              this.cache.yearSelect.disabled = false;
+              this.randomDataTries = 0;
+            });
+          }
         }
     
         // Assign a player to the active position.
@@ -680,6 +749,11 @@
             this.currentTurn = null;
           }
           this.updateDraftStatus();
+    
+          // In elite mode, always trigger a random search after turn change.
+          if (this.eliteMode && this.currentTurn !== null) {
+            this.tryRandomSelection();
+          }
         }
     
         // For automatic round end when scores are shown.
@@ -694,7 +768,7 @@
         // Construct and display the manual winner modal (Elite mode).
         showManualWinnerModal(team1Total, team2Total) {
           const buildTeamTableForModal = (teamRows) => {
-            let tableHTML = `<table style="width: 100%; border-collapse: collapse; margin-top: 10px;" border="1">
+            let tableHTML = `<table border="1">
                                <thead>
                                  <tr><th>Position</th><th>Name</th></tr>
                                </thead>
@@ -715,13 +789,15 @@
           // Hide default modal buttons.
           this.cache.modalYes.style.display = "none";
           this.cache.modalNo.style.display = "none";
-          this.cache.modalMessage.innerHTML = `<div style="margin-bottom: 10px;">Who won?</div>
-            <div style="display: flex; justify-content: space-around; gap: 30px;">
-              <div style="text-align:center;">
+          // Use the new classes to center the modal content.
+          this.cache.modalMessage.innerHTML = `
+            <div style="margin-bottom: 10px;">Who won?</div>
+            <div class="modal-columns">
+              <div class="modal-column">
                 <button id="modalWinnerTeam1" class="small-btn">Team 1</button>
                 ${team1TableHTML}
               </div>
-              <div style="text-align:center;">
+              <div class="modal-column">
                 <button id="modalWinnerTeam2" class="small-btn">Team 2</button>
                 ${team2TableHTML}
               </div>
@@ -831,6 +907,7 @@
         }
     
         showRoundHistory(roundData) {
+          // Hide the game UI completely.
           this.hideGameUI();
           const positionsOrder = ["PG", "SG", "SF", "PF", "C"];
           const sortByPosition = (a, b) => positionsOrder.indexOf(a.position) - positionsOrder.indexOf(b.position);
@@ -867,7 +944,6 @@
                       </table>`;
             return html;
           };
-    
           const team1Table = buildTeamTable("Team 1", team1PlayersSorted, roundData.team1Total);
           const team2Table = buildTeamTable("Team 2", team2PlayersSorted, roundData.team2Total);
           const html = `<div style="display: flex; justify-content: space-around; gap:30px;">
@@ -875,13 +951,16 @@
                           <div>${team2Table}</div>
                         </div>`;
           this.cache.roundHistoryDiv.innerHTML = html;
+          // Show only the round history container as a new screen.
           this.cache.roundHistoryContainer.style.display = "block";
         }
     
         hideGameUI() {
           this.cache.searchForm.style.display = "none";
           this.cache.searchResultsTable.style.display = "none";
-          this.cache.team1.parentElement.style.display = "none";
+          if (this.cache.draftContainer) {
+            this.cache.draftContainer.style.display = "none";
+          }
           this.cache.currentDraft.style.display = "none";
           this.cache.roundHistoryButtons.style.display = "none";
           this.cache.roundWins.style.display = "none";
@@ -890,7 +969,9 @@
         showGameUI() {
           this.cache.searchForm.style.display = "block";
           this.cache.searchResultsTable.style.display = "table";
-          this.cache.team1.parentElement.style.display = "block";
+          if (this.cache.draftContainer) {
+            this.cache.draftContainer.style.display = "flex";
+          }
           this.cache.currentDraft.style.display = "block";
           this.cache.roundHistoryButtons.style.display = "block";
           this.cache.roundWins.style.display = "block";
@@ -924,20 +1005,50 @@
           this.cache.roundHistoryButtons.innerHTML = "";
           this.updateDraftStatus();
           this.updateRoundWinsDisplay();
+          
+          // If elite mode is active, immediately trigger a fresh random search.
+          if (this.eliteMode && this.currentTurn !== null) {
+            this.tryRandomSelection();
+          }
+    
           this.showGameUI();
         }
     
-        // Toggle Elite mode: hide/show RNG scores and update Elite button color.
+        // New toggleEliteMode method for the new elite rules.
         toggleEliteMode() {
-          this.showScores = !this.showScores;
-          if (!this.showScores) {
-            document.body.classList.add("hide-rng");
+          if (!this.eliteMode) {
+            // Toggling elite mode ON:
+            this.eliteMode = true;
+            this.randomDataTries = 0;
             this.cache.eliteToggle.style.background = "green";
-          } else {
+            // Always show RNG scores in elite mode.
+            this.showScores = true;
             document.body.classList.remove("hide-rng");
+            // Disable team and year selections.
+            this.cache.teamSelect.disabled = true;
+            this.cache.yearSelect.disabled = true;
+            // Automatically make a random selection and trigger search.
+            this.tryRandomSelection();
+          } else {
+            // Toggling elite mode OFF:
+            this.eliteMode = false;
             this.cache.eliteToggle.style.background = "#444";
+            // Re-enable team and year selections.
+            this.cache.teamSelect.disabled = false;
+            this.cache.yearSelect.disabled = false;
           }
           this.updateTotalScores();
+        }
+    
+        // Helper method to choose a random team and year, then trigger the search.
+        tryRandomSelection() {
+          const randomTeam = this.teams[Math.floor(Math.random() * this.teams.length)];
+          const availableYears = this.years[randomTeam];
+          const randomYear = availableYears[Math.floor(Math.random() * availableYears.length)];
+          this.cache.teamSelect.value = randomTeam;
+          this.cache.yearSelect.value = randomYear;
+          // Trigger search using a dummy event.
+          this.fetchPlayers({ preventDefault: () => {} });
         }
     
         // Clear team tables and advance to next round.
@@ -964,6 +1075,11 @@
           this.currentRound++;
           this.currentTurn = this.roundStarter;
           this.updateDraftStatus();
+    
+          // In elite mode, trigger a fresh random search for the new round.
+          if (this.eliteMode && this.currentTurn !== null) {
+            this.tryRandomSelection();
+          }
         }
       }
     
